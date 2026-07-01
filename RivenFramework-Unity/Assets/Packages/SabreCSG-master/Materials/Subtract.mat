@@ -27,7 +27,7 @@ Material:
     m_Floats:
     - _FaceToggle: 1
     - _GridAlpha: 0.1
-    - _GridSize: 4
+    - _GridSize: 64
     - _GridToggle: 1
     m_Colors:
     - _Color: {r: 1, g: 0.6431373, b: 0, a: 0}

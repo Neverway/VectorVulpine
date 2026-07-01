@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
 
 public class AerowingController : MonoBehaviour
@@ -62,6 +63,16 @@ public class AerowingController : MonoBehaviour
     public bool rightWingBroken, leftWingBroken;
     public int rightWingHealth = 60, leftWingHealth = 60;
     
+    [Header("Damage Shake")]
+    public int hitTimer;
+    public float damageShake;
+    public float xShake;
+    private int shakeSign = 1;
+    
+    [Header("Wing Effects")]
+    public float rockPhase, bobPhase;
+    public float xRock, yBob, rockAngle;
+    
     [Header("Output")]
     public Vector3 position;
     public Vector3 velocity;
@@ -114,6 +125,8 @@ public class AerowingController : MonoBehaviour
         AerowingBrake();
         UpdateAerowingRoll();
         MoveAerowingOnRails();
+        UpdateDamageShake();
+        UpdateWingEffects();
         
         position.x += knockback.x;
         position.y += knockback.y;
@@ -383,6 +396,8 @@ public class AerowingController : MonoBehaviour
         shields -= damage;
         if (shields < 0) shields = 0;
         mercyTimer = 20;
+        hitTimer = 20;
+        shakeSign = GetShakeSign(hitDirection);
 
         Vector3 localKnock = Vector3.zero;
         switch (hitDirection)
@@ -423,6 +438,44 @@ public class AerowingController : MonoBehaviour
         hitTop.position = worldPos + shipRotation * new Vector3(0f, 24f, 0f) * WORLD_SCALE;
         hitBottom.position = worldPos + shipRotation * new Vector3(0f, -24f, 0f) * WORLD_SCALE;
     }
+
+    private int GetShakeSign(HitDirections direction)
+    {
+        switch (direction)
+        {
+            case HitDirections.RightWing: return 1;
+            case HitDirections.LeftWing: return -1;
+            case HitDirections.Top: return 1;
+            case HitDirections.Bottom: return -1;
+            default: return 1;
+        }
+    }
+
+    private void UpdateDamageShake()
+    {
+        if (hitTimer <= 0) return;
+
+        hitTimer--;
+        damageShake = Mathf.Sin(hitTimer * 400f * Mathf.Deg2Rad) * hitTimer * shakeSign;
+        xShake = damageShake * 0.8f;
+
+        if (hitTimer == 0)
+        {
+            damageShake = 0f;
+            xShake = 0f;
+        }
+    }
+
+    private void UpdateWingEffects()
+    {
+        xRock = Mathf.Sin(rockPhase * 0.7f * Mathf.Deg2Rad) * 0.5f;
+        bobPhase += 10f;
+        rockPhase += 8f;
+        yBob = -Mathf.Sin(bobPhase * Mathf.Deg2Rad) * 0.5f;
+
+        float amplitude = (rightWingBroken || leftWingBroken) ? 0.5f : 1.5f;
+        rockAngle = Mathf.Sin(rockPhase * Mathf.Deg2Rad) * amplitude;
+    }
     
     // MONO BEHAVIOUR LINKS
     private void Awake()
@@ -459,7 +512,8 @@ public class AerowingController : MonoBehaviour
     {
         Tick();
         transform.position = new Vector3(position.x, position.y, 0) * WORLD_SCALE;
-        visualMesh.transform.rotation = shipRotation;
+        Quaternion wobble = Quaternion.Euler(0f, 0f, rockAngle + xRock + damageShake * 1f);
+        visualMesh.transform.rotation = shipRotation * wobble;
         UpdateHitboxes();
     }
 }

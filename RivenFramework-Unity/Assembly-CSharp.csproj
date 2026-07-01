@@ -194,6 +194,7 @@
      <Compile Include="Assets/Resources/Other/IntegratableSystems/TextboxSystem/GI_TextboxManager.cs" />
      <Compile Include="Assets/Resources/Scripts/ObstacleHitbox.cs" />
      <Compile Include="Assets/Resources/Other/IntegratableSystems/ErryLib/ModifierSystem/ModifierSystem/ModifiableValue.cs" />
+     <Compile Include="Assets/Resources/Scripts/example.cs" />
      <Compile Include="Assets/Packages/SabreCSG-master/Scripts/Geometry/AdjacencyFilters.cs" />
      <Compile Include="Assets/Packages/SabreCSG-master/Scripts/Importers/Quake1/MapBrush.cs" />
      <Compile Include="Assets/Packages/SabreCSG-master/Scripts/Extensions/EditorHelper.cs" />
