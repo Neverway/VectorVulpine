@@ -51,6 +51,17 @@ public class AerowingController : MonoBehaviour
     private int rollInputTimerL, rollInputTimerR;
     private float velocityMultiplier = 1f;
     
+    [Header("Collision")]
+    public Transform hitRightWing, hitLeftWing, hitTop, hitBottom;
+    public float knockbackDistance = 20f;
+    private Vector3 knockback;
+    
+    [Header("Health")]
+    public int shields = 255;
+    public int mercyTimer = 0;
+    public bool rightWingBroken, leftWingBroken;
+    public int rightWingHealth = 60, leftWingHealth = 60;
+    
     [Header("Output")]
     public Vector3 position;
     public Vector3 velocity;
@@ -93,15 +104,21 @@ public class AerowingController : MonoBehaviour
         return stepSize;
     }
     
-    
     // MAIN MOVEMENT
     private void Tick()
     {
+        if (mercyTimer > 0) mercyTimer--;
+        
         AerowingBank();
         AerowingBoost();
         AerowingBrake();
         UpdateAerowingRoll();
         MoveAerowingOnRails();
+        
+        position.x += knockback.x;
+        position.y += knockback.y;
+        SmoothStepToF(ref knockback.x, 0f, 0.1f, 1f, 0.5f);
+        SmoothStepToF(ref knockback.y, 0f, 0.1f, 1f, 0.5f);
     }
     
     private void AerowingBank()
@@ -354,6 +371,59 @@ public class AerowingController : MonoBehaviour
         position.z += velocity.z;
     }
     
+    // COLLISION AND DAMAGE
+    public void OnHitboxCollision(HitDirections hitDirection, ObstacleHitbox obstacle)
+    {
+        if (mercyTimer > 0 || obstacle.isWoosh) return;
+        ApplyDamage(hitDirection, obstacle.damage);
+    }
+
+    private void ApplyDamage(HitDirections hitDirection, int damage)
+    {
+        shields -= damage;
+        if (shields < 0) shields = 0;
+        mercyTimer = 20;
+
+        Vector3 localKnock = Vector3.zero;
+        switch (hitDirection)
+        {
+            case HitDirections.RightWing: localKnock = new Vector3(-knockbackDistance, 0f, 0f); DamageWing(false); break;
+            case HitDirections.LeftWing: localKnock = new Vector3(knockbackDistance, 0f, 0f); DamageWing(true); break;
+            case HitDirections.Top: localKnock = new Vector3(0f, -knockbackDistance, 0f); break;
+            case HitDirections.Bottom: localKnock = new Vector3(0f, knockbackDistance, 0f); break;
+        }
+
+        Vector3 worldKnock = Quaternion.Euler(0f, rotY + 180f, 0f) * localKnock;
+        knockback.x += worldKnock.x;
+        knockback.y += worldKnock.y;
+    }
+
+    private void DamageWing(bool left)
+    {
+        if (left && !leftWingBroken)
+        {
+            leftWingHealth -= 20;
+            if (leftWingHealth <= 0) leftWingBroken = true;
+        }
+        else if (!left && !rightWingBroken)
+        {
+            rightWingHealth -= 20;
+            if (rightWingHealth <= 0) rightWingBroken = true;
+        }
+    }
+
+    private void UpdateHitboxes()
+    {
+        Vector3 worldPos = transform.position;
+        float rightX = rightWingBroken ? 30f : 40f;
+        float leftX = leftWingBroken ? -30f : -40f;
+        
+        hitRightWing.position = worldPos + shipRotation * new Vector3(rightX, 0f, 0f) * WORLD_SCALE;
+        hitLeftWing.position = worldPos + shipRotation * new Vector3(leftX, 0f, 0f) * WORLD_SCALE;
+        hitTop.position = worldPos + shipRotation * new Vector3(0f, 24f, 0f) * WORLD_SCALE;
+        hitBottom.position = worldPos + shipRotation * new Vector3(0f, -24f, 0f) * WORLD_SCALE;
+    }
+    
     // MONO BEHAVIOUR LINKS
     private void Awake()
     {
@@ -390,5 +460,6 @@ public class AerowingController : MonoBehaviour
         Tick();
         transform.position = new Vector3(position.x, position.y, 0) * WORLD_SCALE;
         visualMesh.transform.rotation = shipRotation;
+        UpdateHitboxes();
     }
 }
