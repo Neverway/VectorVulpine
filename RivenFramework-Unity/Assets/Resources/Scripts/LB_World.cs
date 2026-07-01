@@ -7,6 +7,7 @@
 //
 //====================================================================================================================//
 
+using System;
 using UnityEngine;
 
 /// <summary>
@@ -18,6 +19,9 @@ public class LB_World : MonoBehaviour
 {
     #region========================================( Variables )======================================================//
     /*-----[ Inspector Variables ]------------------------------------------------------------------------------------*/
+    public GameObject levelRoot;
+    public float levelLength;
+    public bool wrapLevel;
     
     
     /*-----[ External Variables ]-------------------------------------------------------------------------------------*/
@@ -28,7 +32,7 @@ public class LB_World : MonoBehaviour
     
     /*-----[ Reference Variables ]------------------------------------------------------------------------------------*/
     private GI_WidgetManager widgetManager;
-    // TODO: This may be better changed from GameObject to reference a parent WB_HUD class
+    private AerowingController aerowingController;
     [Tooltip("A reference to the HUD widget prefab to draw to the UI")]
     [SerializeField] private GameObject HUDWidgetPrefab;
     
@@ -40,10 +44,18 @@ public class LB_World : MonoBehaviour
     /*-----[ Mono Functions ]-----------------------------------------------------------------------------------------*/
     private void Start()
     {
-        widgetManager = FindObjectOfType<GI_WidgetManager>();
-        widgetManager.AddWidget(HUDWidgetPrefab);
+        //widgetManager = FindObjectOfType<GI_WidgetManager>();
+        //widgetManager.AddWidget(HUDWidgetPrefab);
+        aerowingController = FindObjectOfType<AerowingController>();
     }
-    
+
+    private void FixedUpdate()
+    {
+        var currentLevelProgress = -aerowingController.position.z;
+        if (wrapLevel) currentLevelProgress = -aerowingController.position.z % (levelLength / aerowingController.WORLD_SCALE);
+        levelRoot.transform.position = new Vector3(0, 0, currentLevelProgress) * aerowingController.WORLD_SCALE;
+    }
+
     /*-----[ Internal Functions ]-------------------------------------------------------------------------------------*/
     
     
