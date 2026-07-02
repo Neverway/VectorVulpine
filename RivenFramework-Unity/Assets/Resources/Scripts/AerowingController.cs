@@ -72,6 +72,7 @@ public class AerowingController : MonoBehaviour
     [Header("Wing Effects")]
     public float rockPhase, bobPhase;
     public float xRock, yBob, rockAngle;
+    public GameObject leftWingFixed, leftWingDamaged, rightWingFixed, rightWingDamaged;
     
     [Header("Output")]
     public Vector3 position;
@@ -515,5 +516,29 @@ public class AerowingController : MonoBehaviour
         Quaternion wobble = Quaternion.Euler(0f, 0f, rockAngle + xRock + damageShake * 1f);
         visualMesh.transform.rotation = shipRotation * wobble;
         UpdateHitboxes();
+
+        // Wing broken visuals
+        switch (leftWingBroken)
+        {
+            case true:
+                leftWingFixed.SetActive(false);
+                leftWingDamaged.SetActive(true);
+                break;
+            case false:
+                leftWingFixed.SetActive(true);
+                leftWingDamaged.SetActive(false);
+                break;
+        }
+        switch (rightWingBroken)
+        {
+            case true:
+                rightWingFixed.SetActive(false);
+                rightWingDamaged.SetActive(true);
+                break;
+            case false:
+                rightWingFixed.SetActive(true);
+                rightWingDamaged.SetActive(false);
+                break;
+        }
     }
 }
