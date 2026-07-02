@@ -590,6 +590,7 @@ MonoBehaviour:
   RPressed: 0
   boostHeld: 0
   brakeHeld: 0
+  boostPressed: 0
   xPath: 0
   yPath: 0
   pathWidth: 700
@@ -612,11 +613,12 @@ MonoBehaviour:
   rollState: 0
   rollTimer: 0
   rollRate: 0
+  somersault: 0
+  knockbackDistance: 20
   hitRightWing: {fileID: 2377257342679662462}
   hitLeftWing: {fileID: 7389353916795516722}
   hitTop: {fileID: 7562662807740212037}
   hitBottom: {fileID: 2709298048710347275}
-  knockbackDistance: 20
   shields: 255
   mercyTimer: 0
   rightWingBroken: 0
@@ -635,6 +637,11 @@ MonoBehaviour:
   leftWingDamaged: {fileID: 6052528840416188638}
   rightWingFixed: {fileID: 8688750641281512967}
   rightWingDamaged: {fileID: 307966873377396480}
+  isSpaceLevel: 1
+  camEye: {x: 0, y: 0, z: 0}
+  camAt: {x: 0, y: 0, z: 0}
+  camRoll: 0
+  camDist: 0
   position: {x: 0, y: 0, z: 0}
   velocity: {x: 0, y: 0, z: 0}
   shipRotation: {x: 0, y: 0, z: 0, w: 0}
@@ -866,7 +873,7 @@ PrefabInstance:
     - target: {fileID: 911367883527054998, guid: 273f560cf23f789b987aeac1af365c4d,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 12
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 911367883527054998, guid: 273f560cf23f789b987aeac1af365c4d,
         type: 3}
@@ -902,6 +909,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1301064606120009362, guid: 273f560cf23f789b987aeac1af365c4d,
+        type: 3}
+      propertyPath: field of view
+      value: 65
       objectReference: {fileID: 0}
     - target: {fileID: 1301064606120009362, guid: 273f560cf23f789b987aeac1af365c4d,
         type: 3}

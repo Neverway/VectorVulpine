@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.Mathematics;
 using UnityEngine;
 
 public class AerowingController : MonoBehaviour
@@ -17,12 +16,14 @@ public class AerowingController : MonoBehaviour
     public bool LHeld, RHeld;
     public bool LPressed, RPressed;
     public bool boostHeld, brakeHeld;
-    
+    public bool boostPressed;
     private InputActions.AerowingActions inputActions;
-    
-    [Header("Track Rails")]
+
+    [Header("Track Rails")] 
     [Tooltip("The center of the track at the current z")]
-    public float xPath, yPath;
+    public float xPath;
+    [Tooltip("The center of the track at the current z")]
+    public float yPath;
     public float pathWidth = 700f;
     public float pathHeight = 680f;
     public float pathFloor;
@@ -38,8 +39,10 @@ public class AerowingController : MonoBehaviour
     private const float BOOST_DEPLETE = 3.0f;
     private const float BOOST_RECOVER = 0.5f;
 
-    [Header("Rotation")]
-    public float rotY, rotX, rotZ;
+    [Header("Rotation")] 
+    public float rotY;
+    public float rotX;
+    public float rotZ;
     public float zRotBank;
     public float zRotBarrelRoll;
     public float aerobaticPitch = 0f;
@@ -52,9 +55,14 @@ public class AerowingController : MonoBehaviour
     private int rollInputTimerL, rollInputTimerR;
     private float velocityMultiplier = 1f;
     
+    [Header("Loop And Somersault")]
+    public bool somersault;
+    private int loopDownTimer;
+    private int loopBoostTimer;
+    
     [Header("Collision")]
-    public Transform hitRightWing, hitLeftWing, hitTop, hitBottom;
     public float knockbackDistance = 20f;
+    public Transform hitRightWing, hitLeftWing, hitTop, hitBottom;
     private Vector3 knockback;
     
     [Header("Health")]
@@ -70,9 +78,22 @@ public class AerowingController : MonoBehaviour
     private int shakeSign = 1;
     
     [Header("Wing Effects")]
-    public float rockPhase, bobPhase;
+    public float rockPhase;
+    public float bobPhase;
     public float xRock, yBob, rockAngle;
     public GameObject leftWingFixed, leftWingDamaged, rightWingFixed, rightWingDamaged;
+
+    [Header("View Camera")] 
+    public bool alternateView;
+    public bool viewTogglePressed;
+    public bool isSpaceLevel = true;
+    public Vector3 camEye, camAt;
+    public float camRoll;
+    public float camDist;
+    private float camLookX, camLookY;
+    private const float CAM_EYE_SCALE = 0.777f;
+    private const float CAM_AT_SCALE = 0.777f;
+    private const float CAM_BLEND = 0.2f;
     
     [Header("Output")]
     public Vector3 position;
@@ -84,7 +105,7 @@ public class AerowingController : MonoBehaviour
     
     [Header("References")]
     public GameObject visualMesh;
-    public Camera viewCamera;
+    public Camera chasingViewCamera, cockpitViewCamera;
     public GameObject levelRoot;
     
     // HELPERS
@@ -120,14 +141,18 @@ public class AerowingController : MonoBehaviour
     private void Tick()
     {
         if (mercyTimer > 0) mercyTimer--;
+        if (viewTogglePressed && !somersault) alternateView = !alternateView;
         
         AerowingBank();
         AerowingBoost();
         AerowingBrake();
         UpdateAerowingRoll();
-        MoveAerowingOnRails();
+        if (somersault) MoveInLoop();
+        else MoveAerowingOnRails();
         UpdateDamageShake();
         UpdateWingEffects();
+        if (alternateView) UpdateCockpitCamera();
+        else UpdateCamera();
         
         position.x += knockback.x;
         position.y += knockback.y;
@@ -212,6 +237,24 @@ public class AerowingController : MonoBehaviour
     
     private void AerowingBoost()
     {
+        if (loopDownTimer > 0) loopDownTimer--;
+        if (loopBoostTimer > 0) loopBoostTimer--;
+
+        if (!somersault)
+        {
+            if (stickY >= -50f)
+            {
+                loopDownTimer = 5;
+            }
+
+            if (loopDownTimer > 0 && loopDownTimer < 5 && loopBoostTimer != 0)
+            {
+                somersault = true;
+                if (aerobaticPitch > 340f) aerobaticPitch -= 360f;
+                return;
+            }
+        }
+        
         if (boostMeter != 0f && brakeHeld && boostHeld)
         {
             boostCooldown = true;
@@ -219,6 +262,11 @@ public class AerowingController : MonoBehaviour
 
         if (boostHeld && !brakeHeld && !boostCooldown)
         {
+            if (boostMeter == 0f && boostPressed)
+            {
+                loopBoostTimer = 5;
+            }
+            
             boostMeter += BOOST_DEPLETE;
             if (boostMeter > 90f)
             {
@@ -231,6 +279,8 @@ public class AerowingController : MonoBehaviour
             {
                 boostSpeed = 30f;
             }
+
+            SmoothStepToF(ref camDist, -400f, 0.1f, 30f, 0f);
         }
         else
         {
@@ -265,6 +315,8 @@ public class AerowingController : MonoBehaviour
 
             boostSpeed -= 1.0f;
             if (boostSpeed < -20f) boostSpeed = -20f;
+
+            SmoothStepToF(ref camDist, 180f, 0.1f, 10f, 0f);
         }
         else if (boostMeter > 0f)
         {
@@ -281,6 +333,53 @@ public class AerowingController : MonoBehaviour
                 if (boostSpeed > 0f) boostSpeed = 0f;
             }
         }
+
+        SmoothStepToF(ref camDist, 0f, 0.1f, 5f, 0f);
+    }
+
+    private void MoveInLoop()
+    {
+        if (aerobaticPitch < 180f) position.y += 2f;
+
+        boostCooldown = true;
+        boostMeter += 2f;
+        if (boostMeter > 90f) boostMeter = 90f;
+
+        SmoothStepToF(ref aerobaticPitch, 360f, 0.1f, 5f, 0.001f);
+
+        if (aerobaticPitch > 350f)
+        {
+            somersault = false;
+        }
+
+        SmoothStepToF(ref rotZ, 0f, 0.1f, 5f, 0f);
+        SmoothStepToF(ref rotX, 0f, 0.1f, 5f, 0f);
+
+        float temp = -stickX * 0.68f;
+        SmoothStepToF(ref rotY, temp, 0.1f, 2f, 0f);
+
+        bankAngle = rotZ + zRotBank + zRotBarrelRoll;
+
+        Quaternion offsetRot = Quaternion.Euler(-(rotX + aerobaticPitch), rotY + 180f, 0f);
+        Vector3 baseVel = offsetRot * new Vector3(0f, 0f, baseSpeed);
+        
+        Quaternion trackRot = Quaternion.Euler(trackPitchDeg, trackYawDeg, 0f);
+        Vector3 forwardVel = trackRot * baseVel;
+        Quaternion rollRot = Quaternion.Euler(0f, 0f, bankAngle);
+        shipRotation = trackRot * offsetRot * rollRot;
+
+        velocity = forwardVel;
+
+        position.x += velocity.x;
+        position.y += velocity.y;
+
+        if (position.y < pathFloor + yPath)
+        {
+            position.y = pathFloor + yPath;
+            velocity.y = 0f;
+        }
+
+        position.z += velocity.z;
     }
     
     private void MoveAerowingOnRails()
@@ -383,6 +482,76 @@ public class AerowingController : MonoBehaviour
         }
 
         position.z += velocity.z;
+    }
+
+    private void UpdateCamera()
+    {
+        float lookInputX = somersault ? 0f : stickX;
+        float lookInputY = somersault ? 0f : -stickY;
+
+        SmoothStepToF(ref camLookX, lookInputX * 1.6f, 0.1f, 3f, 0.05f);
+
+        if (isSpaceLevel)
+            SmoothStepToF(ref camLookY, lookInputY * 0.8f, 0.1f, 3f, 0.05f);
+        else if (position.y < groundHeight + 50f)
+            SmoothStepToF(ref camLookY, lookInputY * 0.3f, 0.1f, 3f, 0.05f);
+        else
+            SmoothStepToF(ref camLookY, lookInputY * 2f, 0.1f, 4f, 0.05f);
+
+        float targetEyeX = (position.x - xPath) * CAM_EYE_SCALE - camLookX * 1.5f + xPath;
+        float targetEyeY = (position.y - yPath) * CAM_EYE_SCALE - (camLookY - 50f) + yPath;
+        float targetEyeZ = 400f - camDist;
+
+        float targetAtX = (position.x - xPath) * CAM_AT_SCALE + xShake * -2f - camLookX * 0.5f + xPath;
+        float targetAtY = (position.y - yPath) * CAM_AT_SCALE + 20f + xRock * 5f - camLookY * 0.25f + yPath;
+        float targetAtZ = 0f;
+
+        if (somersault)
+        {
+            targetEyeZ += 200f;
+            targetAtY = (position.y - yPath) * 0.9f + yPath;
+        }
+
+        SmoothStepToF(ref camEye.x, targetEyeX, CAM_BLEND, 1000f, 0f);
+        SmoothStepToF(ref camEye.y, targetEyeY, CAM_BLEND, 1000f, 0f);
+        SmoothStepToF(ref camEye.z, targetEyeZ, CAM_BLEND, 1000f, 0f);
+        SmoothStepToF(ref camAt.x, targetAtX, CAM_BLEND, 1000f, 0f);
+        SmoothStepToF(ref camAt.y, targetAtY, CAM_BLEND, 1000f, 0f);
+        SmoothStepToF(ref camAt.z, targetAtZ, CAM_BLEND, 1000f, 0f);
+
+        float rollTarget = -rotZ * (isSpaceLevel ? 0.2f : 0.3f);
+        SmoothStepToF(ref camRoll, rollTarget, 0.1f, 1.5f, 0f);
+    }
+
+    private void ApplyCamera()
+    {
+        Vector3 eyeWorld = camEye * WORLD_SCALE;
+        Vector3 atWorld = camAt * WORLD_SCALE;
+
+        Vector3 forward = (atWorld - eyeWorld).normalized;
+        Quaternion lookRot = Quaternion.LookRotation(forward, Vector3.up);
+        Quaternion rollRot = Quaternion.Euler(0f, 0f, camRoll);
+
+        chasingViewCamera.transform.position = eyeWorld;
+        chasingViewCamera.transform.rotation = lookRot * rollRot;
+    }
+    
+    private void UpdateCockpitCamera()
+    {
+        Quaternion lookRot = Quaternion.Euler(-(rotX + damageShake) * 0.75f, (rotY + damageShake) * 0.75f + 180f, 0f);
+        Vector3 forwardDir = lookRot * Vector3.forward;
+
+        Vector3 targetEye = new Vector3(position.x, position.y + yBob, 0f);
+        Vector3 targetAt = targetEye + forwardDir * 1000f;
+
+        SmoothStepToF(ref camEye.x, targetEye.x, CAM_BLEND, 100f, 0f);
+        SmoothStepToF(ref camEye.y, targetEye.y, CAM_BLEND, 100f, 0f);
+        SmoothStepToF(ref camEye.z, targetEye.z, CAM_BLEND, 50f, 0f);
+        SmoothStepToF(ref camAt.x, targetAt.x, CAM_BLEND, 100f, 0f);
+        SmoothStepToF(ref camAt.y, targetAt.y, CAM_BLEND, 100f, 0f);
+        SmoothStepToF(ref camAt.z, targetAt.z, CAM_BLEND, 100f, 0f);
+
+        camRoll = -(bankAngle + rockAngle);
     }
     
     // COLLISION AND DAMAGE
@@ -501,6 +670,9 @@ public class AerowingController : MonoBehaviour
         
         boostHeld = inputActions.Boost.IsPressed();
         brakeHeld = inputActions.Brake.IsPressed();
+        
+        boostPressed = inputActions.Boost.WasPressedThisFrame();
+        viewTogglePressed = inputActions.ToggleView.WasPressedThisFrame();
 
         Vector2 stick = inputActions.Move.ReadValue<Vector2>();
         var finalStickX = invertX ? stick.x : -stick.x;
@@ -516,6 +688,7 @@ public class AerowingController : MonoBehaviour
         Quaternion wobble = Quaternion.Euler(0f, 0f, rockAngle + xRock + damageShake * 1f);
         visualMesh.transform.rotation = shipRotation * wobble;
         UpdateHitboxes();
+        ApplyCamera();
 
         // Wing broken visuals
         switch (leftWingBroken)

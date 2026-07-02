@@ -3139,6 +3139,15 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""ToggleView"",
+                    ""type"": ""Button"",
+                    ""id"": ""52523ff6-30bf-4505-b2ac-2c3ac28619b9"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -3167,7 +3176,7 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""76210507-d92e-4999-8372-37cd41e4d52e"",
-                    ""path"": ""<Keyboard>/q"",
+                    ""path"": ""<Keyboard>/a"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Keyboard&Mouse"",
@@ -3189,7 +3198,7 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""0110e424-bbb2-4160-ac47-7f35a6468a57"",
-                    ""path"": ""<Keyboard>/e"",
+                    ""path"": ""<Keyboard>/d"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Keyboard&Mouse"",
@@ -3249,6 +3258,28 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": ""Gamepad"",
                     ""action"": ""Boost"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""55eb465c-b2dc-406c-9ab2-fe916deb3ee2"",
+                    ""path"": ""<Keyboard>/tab"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ToggleView"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""197caabf-2bb8-42cf-9c7b-5d64c614b027"",
+                    ""path"": ""<Gamepad>/select"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ToggleView"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -3362,6 +3393,7 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
         m_Aerowing_RightAction = m_Aerowing.FindAction("RightAction", throwIfNotFound: true);
         m_Aerowing_Brake = m_Aerowing.FindAction("Brake", throwIfNotFound: true);
         m_Aerowing_Boost = m_Aerowing.FindAction("Boost", throwIfNotFound: true);
+        m_Aerowing_ToggleView = m_Aerowing.FindAction("ToggleView", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -4142,6 +4174,7 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Aerowing_RightAction;
     private readonly InputAction m_Aerowing_Brake;
     private readonly InputAction m_Aerowing_Boost;
+    private readonly InputAction m_Aerowing_ToggleView;
     public struct AerowingActions
     {
         private @InputActions m_Wrapper;
@@ -4151,6 +4184,7 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
         public InputAction @RightAction => m_Wrapper.m_Aerowing_RightAction;
         public InputAction @Brake => m_Wrapper.m_Aerowing_Brake;
         public InputAction @Boost => m_Wrapper.m_Aerowing_Boost;
+        public InputAction @ToggleView => m_Wrapper.m_Aerowing_ToggleView;
         public InputActionMap Get() { return m_Wrapper.m_Aerowing; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -4175,6 +4209,9 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
             @Boost.started += instance.OnBoost;
             @Boost.performed += instance.OnBoost;
             @Boost.canceled += instance.OnBoost;
+            @ToggleView.started += instance.OnToggleView;
+            @ToggleView.performed += instance.OnToggleView;
+            @ToggleView.canceled += instance.OnToggleView;
         }
 
         private void UnregisterCallbacks(IAerowingActions instance)
@@ -4194,6 +4231,9 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
             @Boost.started -= instance.OnBoost;
             @Boost.performed -= instance.OnBoost;
             @Boost.canceled -= instance.OnBoost;
+            @ToggleView.started -= instance.OnToggleView;
+            @ToggleView.performed -= instance.OnToggleView;
+            @ToggleView.canceled -= instance.OnToggleView;
         }
 
         public void RemoveCallbacks(IAerowingActions instance)
@@ -4313,5 +4353,6 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
         void OnRightAction(InputAction.CallbackContext context);
         void OnBrake(InputAction.CallbackContext context);
         void OnBoost(InputAction.CallbackContext context);
+        void OnToggleView(InputAction.CallbackContext context);
     }
 }
