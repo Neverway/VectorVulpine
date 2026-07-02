@@ -8,6 +8,12 @@ public class AerowingHitPoint : MonoBehaviour
     public AerowingController ship;
     public HitDirections hitDirection;
 
+    private void OnTriggerEnter(Collider other)
+    {
+        var obstacle = other.GetComponent<ObstacleHitbox>();
+        if (obstacle == null) return;
+        ship.OnHitboxCollision(hitDirection, obstacle);
+    }
     private void OnTriggerStay(Collider other)
     {
         var obstacle = other.GetComponent<ObstacleHitbox>();

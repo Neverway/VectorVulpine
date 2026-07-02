@@ -85,6 +85,8 @@ public class AerowingController : MonoBehaviour
 
     [Header("View Camera")] 
     public bool alternateView;
+    public bool cockpitActive;
+    public float viewTransitionThreshold = 40f;
     public bool viewTogglePressed;
     public bool isSpaceLevel = true;
     public Vector3 camEye, camAt;
@@ -94,6 +96,7 @@ public class AerowingController : MonoBehaviour
     private const float CAM_EYE_SCALE = 0.777f;
     private const float CAM_AT_SCALE = 0.777f;
     private const float CAM_BLEND = 0.2f;
+    private const float COCKPIT_PULL_CAM_DIST = 400f;
     
     [Header("Output")]
     public Vector3 position;
@@ -151,8 +154,7 @@ public class AerowingController : MonoBehaviour
         else MoveAerowingOnRails();
         UpdateDamageShake();
         UpdateWingEffects();
-        if (alternateView) UpdateCockpitCamera();
-        else UpdateCamera();
+        UpdateViewTransition();
         
         position.x += knockback.x;
         position.y += knockback.y;
@@ -484,6 +486,32 @@ public class AerowingController : MonoBehaviour
         position.z += velocity.z;
     }
 
+    private void UpdateViewTransition()
+    {
+        if (alternateView && !cockpitActive)
+        {
+            SmoothStepToF(ref camDist, COCKPIT_PULL_CAM_DIST, 0.15f, 40f, 0f);
+        }
+        
+        if (cockpitActive) UpdateCockpitCamera();
+        else UpdateCamera();
+
+        float distFromNose = Mathf.Abs(400f - camDist);
+
+        if (alternateView && !cockpitActive && distFromNose < viewTransitionThreshold)
+        {
+            cockpitActive = true;
+            chasingViewCamera.enabled = false;
+            cockpitViewCamera.enabled = true;
+        }
+        else if (!alternateView && cockpitActive && distFromNose < viewTransitionThreshold)
+        {
+            cockpitActive = false;
+            cockpitViewCamera.enabled = false;
+            chasingViewCamera.enabled = true;
+        }
+    }
+
     private void UpdateCamera()
     {
         float lookInputX = somersault ? 0f : stickX;
@@ -532,8 +560,9 @@ public class AerowingController : MonoBehaviour
         Quaternion lookRot = Quaternion.LookRotation(forward, Vector3.up);
         Quaternion rollRot = Quaternion.Euler(0f, 0f, camRoll);
 
-        chasingViewCamera.transform.position = eyeWorld;
-        chasingViewCamera.transform.rotation = lookRot * rollRot;
+        Camera activeCam = chasingViewCamera;
+        activeCam.transform.position = eyeWorld;
+        activeCam.transform.rotation = lookRot * rollRot;
     }
     
     private void UpdateCockpitCamera()
@@ -655,6 +684,10 @@ public class AerowingController : MonoBehaviour
         inputActions.Enable();
         
         pathFloor = groundHeight + 40f;
+        
+        chasingViewCamera.enabled = true;
+        cockpitViewCamera.enabled = false;
+        cockpitActive = false;
     }
 
     private void Update()

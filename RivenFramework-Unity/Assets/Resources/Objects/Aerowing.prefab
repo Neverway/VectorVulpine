@@ -637,6 +637,8 @@ MonoBehaviour:
   leftWingDamaged: {fileID: 6052528840416188638}
   rightWingFixed: {fileID: 8688750641281512967}
   rightWingDamaged: {fileID: 307966873377396480}
+  alternateView: 0
+  viewTogglePressed: 0
   isSpaceLevel: 1
   camEye: {x: 0, y: 0, z: 0}
   camAt: {x: 0, y: 0, z: 0}
@@ -646,7 +648,8 @@ MonoBehaviour:
   velocity: {x: 0, y: 0, z: 0}
   shipRotation: {x: 0, y: 0, z: 0, w: 0}
   visualMesh: {fileID: 5328159483815798690}
-  viewCamera: {fileID: 574138335232851590}
+  chasingViewCamera: {fileID: 574138335232851590}
+  cockpitViewCamera: {fileID: 1521770987213548744}
   levelRoot: {fileID: 0}
 --- !u!1 &8069196988669058161
 GameObject:
@@ -849,6 +852,12 @@ PrefabInstance:
 --- !u!4 &843846282921530572 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 911367883527054998, guid: 273f560cf23f789b987aeac1af365c4d,
+    type: 3}
+  m_PrefabInstance: {fileID: 508948521614193242}
+  m_PrefabAsset: {fileID: 0}
+--- !u!20 &1521770987213548744 stripped
+Camera:
+  m_CorrespondingSourceObject: {fileID: 1301064606120009362, guid: 273f560cf23f789b987aeac1af365c4d,
     type: 3}
   m_PrefabInstance: {fileID: 508948521614193242}
   m_PrefabAsset: {fileID: 0}
